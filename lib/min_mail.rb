@@ -3,8 +3,9 @@ require 'min_mail/imap'
 require 'mail'
 require 'time'
 
-module MinMail
-    def self.extract_address(address_struct)
+class MinMail
+
+    def extract_address(address_struct)
       address = if address_struct.nil?
                   "Unknown"
                 else 
@@ -21,12 +22,29 @@ module MinMail
     end
 
 
-  def self.start
+  def initialize(opts)
 
-    config = YAML::load File.read(ENV['HOME'] + "/vmail/.vmailrc")
+    defaults = {
+      mailbox: 'INBOX'
+    }
+    @opts = defaults.merge opts
 
-    Imap.new(config).with_open {|imap|
-      imap.select "INBOX"
+  end
+
+  def run
+    if @opts[:uid]
+      fetch @opts[:uid]
+    else
+      scan
+    end
+  end
+
+  def scan 
+
+    # fetches the last 20 msg
+    
+    Imap.new(@opts).with_open {|imap|
+      imap.select @opts[:mailbox]
       ids = imap.search("all")
       ids.reverse!
       results = imap.fetch(ids[0,20], ["FLAGS", "ENVELOPE", "RFC822.SIZE", "UID"])
@@ -39,6 +57,7 @@ module MinMail
         sender = extract_address envelope.from.first
         uid = x.attr["UID"]
         params = {
+          uid: x.attr["UID"],
           subject: (subject || ''),
           flags: x.attr['FLAGS'].join(','),
           date: Time.parse(envelope.date).localtime.to_s,
@@ -51,8 +70,23 @@ module MinMail
     }
     
   end
+
+  # fetch one message by uid
+  def fetch uid
+    Imap.new(@opts).with_open {|imap|
+      imap.select(@opts[:mailbox])
+      res = imap.uid_fetch(uid, ["FLAGS", "ENVELOPE", "RFC822.SIZE", "RFC822", "UID"])
+      m = Mail.new(res[0].attr['RFC822'])
+      puts m.body.decoded
+    }
+  end
 end
 
 if __FILE__ == $0
-  MinMail.start
+  opts = YAML::load File.read(ENV['HOME'] + "/vmail/.vmailrc")
+  if ARGV[0]
+    opts.merge! uid: ARGV[0].to_i
+  end
+  MinMail.new(opts).run
+
 end

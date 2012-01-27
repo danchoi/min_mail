@@ -15,7 +15,7 @@ require 'min_mail/flagging_and_moving'
 require 'min_mail/reply_templating'
 =end
 
-module MinMail
+class MinMail
   class Imap
 
 =begin
