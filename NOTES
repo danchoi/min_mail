@@ -3,3 +3,9 @@
 Goals
 
 Turn Vmail into a command line style program that can be used in Unix pipes
+
+
+Need to be able to pipe a search result (message list) into awk and then
+extract email bodies, attachments, etc.
+
+
