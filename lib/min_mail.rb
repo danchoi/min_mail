@@ -2,6 +2,7 @@ require 'min_mail/version'
 require 'min_mail/imap'
 require 'mail'
 require 'time'
+require 'yaml'
 
 class MinMail
 
@@ -65,7 +66,7 @@ class MinMail
           sender: sender,
           recipients: recipients
         }
-        puts params.inspect
+        puts params.to_yaml
       }
     }
     
